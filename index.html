@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agriculture Intelligente</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet" />
+</head>
+<body class="auth-page">
+
+  <!-- LOGIN -->
+  <div id="login-screen" class="login-wrapper">
+    <div class="login-bg">
+      <div class="bg-circle c1"></div>
+      <div class="bg-circle c2"></div>
+      <div class="bg-circle c3"></div>
+      <div class="scanlines"></div>
+    </div>
+    <div class="login-card">
+      <div class="login-logo">
+        <div class="logo-mark">🌱</div>
+        <div class="logo-text-block">
+          <div class="logo-main">Agriculture<strong>Intelligente</strong></div>
+          <div class="logo-sub">UCAC-ICAM · Système IoT Agricole</div>
+        </div>
+      </div>
+      <div id="login-error" class="login-error hidden">⚠ Identifiants incorrects.</div>
+      <div class="form-group">
+        <label>Utilisateur</label>
+        <input id="username" type="text" placeholder="admin" autocomplete="username" />
+      </div>
+      <div class="form-group">
+        <label>Mot de passe</label>
+        <input id="password" type="password" placeholder="••••••••" autocomplete="current-password"
+          onkeydown="if(event.key==='Enter')doLogin()" />
+      </div>
+      <button class="btn-login" onclick="doLogin()">Connexion</button>
+      <div class="login-hints">
+        <span>admin / admin123</span><span>viewer / view123</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- APP -->
+  <div id="app" class="hidden">
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-logo">
+        <span class="sl-icon">🌱</span>
+        <span class="sl-text">AgriSmart</span>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="#" class="nav-item active" onclick="showPage('dashboard',this)">
+          <span class="ni">⊞</span><span data-i18n="nav_dashboard">Tableau de bord</span>
+        </a>
+        <a href="#" class="nav-item" onclick="showPage('sensors',this)">
+          <span class="ni">◈</span><span data-i18n="nav_sensors">Capteurs</span>
+        </a>
+        <a href="#" class="nav-item" onclick="showPage('actuators',this)">
+          <span class="ni">⚙</span><span data-i18n="nav_actuators">Actionneurs</span>
+        </a>
+        <a href="#" class="nav-item" onclick="showPage('history',this)">
+          <span class="ni">◷</span><span data-i18n="nav_history">Historique</span>
+        </a>
+        <a href="#" class="nav-item" onclick="showPage('settings',this)">
+          <span class="ni">≡</span><span data-i18n="nav_settings">Paramètres</span>
+        </a>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="conn-dot-wrap"><span class="cdot" id="conn-dot"></span><span id="conn-label">MQTT connecté</span></div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+        <div class="tb-title" id="page-title">Tableau de bord</div>
+        <div class="tb-right">
+          <button class="bell-btn" onclick="toggleAlertPanel()">
+            🔔<span class="badge" id="alert-badge">0</span>
+          </button>
+          <select class="lang-sel" onchange="setLang(this.value)">
+            <option value="fr">FR</option>
+            <option value="en">EN</option>
+          </select>
+          <div class="user-chip">
+            <span class="role-badge" id="user-role-badge">ADMIN</span>
+            <span id="user-name-display">admin</span>
+            <button class="btn-logout" onclick="doLogout()" title="Déconnexion">⏻</button>
+          </div>
+        </div>
+      </header>
+
+      <!-- Alerts Panel -->
+      <div class="alert-panel hidden" id="alert-panel">
+        <div class="ap-header">
+          <span data-i18n="alerts_title">Alertes actives</span>
+          <button onclick="toggleAlertPanel()">✕</button>
+        </div>
+        <div id="alert-list"><p class="no-alerts" data-i18n="no_alerts">Aucune alerte</p></div>
+      </div>
+
+      <!-- DASHBOARD -->
+      <div class="page active" id="page-dashboard">
+        <div class="page-hdr">
+          <h2 data-i18n="nav_dashboard">Tableau de bord</h2>
+          <div class="live-badge">● LIVE</div>
+        </div>
+        <div class="kpi-grid">
+          <div class="kpi-card" id="kpi-humidity">
+            <div class="kpi-top">
+              <span class="kpi-ico">💧</span>
+              <span class="kpi-label" data-i18n="kpi_humidity">Humidité sol</span>
+              <span class="kpi-chip" id="chip-humidity">—</span>
+            </div>
+            <div class="kpi-val" id="val-humidity">--<small>%</small></div>
+            <div class="kpi-bar-wrap"><div class="kpi-bar" id="bar-humidity"></div></div>
+          </div>
+          <div class="kpi-card" id="kpi-temp">
+            <div class="kpi-top">
+              <span class="kpi-ico">🌡</span>
+              <span class="kpi-label" data-i18n="kpi_temp">Température</span>
+              <span class="kpi-chip" id="chip-temp">—</span>
+            </div>
+            <div class="kpi-val" id="val-temp">--<small>°C</small></div>
+            <div class="kpi-bar-wrap"><div class="kpi-bar" id="bar-temp"></div></div>
+          </div>
+          <div class="kpi-card" id="kpi-co2">
+            <div class="kpi-top">
+              <span class="kpi-ico">🌫</span>
+              <span class="kpi-label" data-i18n="kpi_co2">CO₂</span>
+              <span class="kpi-chip" id="chip-co2">—</span>
+            </div>
+            <div class="kpi-val" id="val-co2">--<small>ppm</small></div>
+            <div class="kpi-bar-wrap"><div class="kpi-bar" id="bar-co2"></div></div>
+          </div>
+          <div class="kpi-card" id="kpi-light">
+            <div class="kpi-top">
+              <span class="kpi-ico">☀</span>
+              <span class="kpi-label" data-i18n="kpi_light">Luminosité</span>
+              <span class="kpi-chip" id="chip-light">—</span>
+            </div>
+            <div class="kpi-val" id="val-light">--<small>lux</small></div>
+            <div class="kpi-bar-wrap"><div class="kpi-bar" id="bar-light"></div></div>
+          </div>
+          <div class="kpi-card" id="kpi-water">
+            <div class="kpi-top">
+              <span class="kpi-ico">🪣</span>
+              <span class="kpi-label" data-i18n="kpi_water">Réservoir</span>
+              <span class="kpi-chip" id="chip-water">—</span>
+            </div>
+            <div class="kpi-val" id="val-water">--<small>%</small></div>
+            <div class="kpi-bar-wrap"><div class="kpi-bar" id="bar-water"></div></div>
+          </div>
+        </div>
+
+        <div class="dash-bottom">
+          <div class="chart-box">
+            <div class="box-title" data-i18n="chart_history">Évolution en temps réel</div>
+            <canvas id="mainChart"></canvas>
+          </div>
+          <div class="act-widget">
+            <div class="box-title" data-i18n="actuators_title">Commande actionneurs</div>
+            <div class="act-row">
+              <span class="act-ico">💧</span>
+              <span class="act-name" data-i18n="pump">Irrigation</span>
+              <label class="tgl"><input type="checkbox" id="act-pump" onchange="toggleActuator('pump',this)"/><span class="tgl-sl"></span></label>
+              <span class="act-st" id="lbl-pump">OFF</span>
+            </div>
+            <div class="act-row">
+              <span class="act-ico">🌀</span>
+              <span class="act-name" data-i18n="fan">Ventilation</span>
+              <label class="tgl"><input type="checkbox" id="act-fan" onchange="toggleActuator('fan',this)"/><span class="tgl-sl"></span></label>
+              <span class="act-st" id="lbl-fan">OFF</span>
+            </div>
+            <div class="act-row">
+              <span class="act-ico">💡</span>
+              <span class="act-name" data-i18n="lighting">Éclairage</span>
+              <label class="tgl"><input type="checkbox" id="act-light" onchange="toggleActuator('light',this)"/><span class="tgl-sl"></span></label>
+              <span class="act-st" id="lbl-light">OFF</span>
+            </div>
+            <div class="act-footer">
+              <span data-i18n="last_update">Mise à jour :</span>
+              <span id="last-update-time" class="mono">--:--:--</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SENSORS -->
+      <div class="page hidden" id="page-sensors">
+        <div class="page-hdr"><h2 data-i18n="nav_sensors">Capteurs</h2></div>
+        <div class="sensors-grid">
+          <div class="sensor-card" id="sc-humidity">
+            <div class="sc-head"><span>💧</span><span data-i18n="sensor_humidity">Humidité du sol — YL-69</span></div>
+            <div class="sc-val" id="sv-humidity">-- %</div>
+            <canvas id="mc-humidity" class="mini-canvas"></canvas>
+            <div class="sc-thresh">
+              <span data-i18n="threshold">Seuil min :</span>
+              <input type="number" id="th-humidity" value="30" min="0" max="100" onchange="updateThreshold('humidity',this.value)" />%
+            </div>
+          </div>
+          <div class="sensor-card" id="sc-temp">
+            <div class="sc-head"><span>🌡</span><span data-i18n="sensor_temp">Température — DHT22</span></div>
+            <div class="sc-val" id="sv-temp">-- °C</div>
+            <canvas id="mc-temp" class="mini-canvas"></canvas>
+            <div class="sc-thresh">
+              <span data-i18n="threshold_max">Seuil max :</span>
+              <input type="number" id="th-temp" value="35" min="0" max="60" onchange="updateThreshold('temp',this.value)" />°C
+            </div>
+          </div>
+          <div class="sensor-card" id="sc-co2">
+            <div class="sc-head"><span>🌫</span><span data-i18n="sensor_co2">CO₂ — SEN0159</span></div>
+            <div class="sc-val" id="sv-co2">-- ppm</div>
+            <canvas id="mc-co2" class="mini-canvas"></canvas>
+            <div class="sc-thresh">
+              <span data-i18n="threshold_max">Seuil max :</span>
+              <input type="number" id="th-co2" value="1000" min="0" max="5000" onchange="updateThreshold('co2',this.value)" />ppm
+            </div>
+          </div>
+          <div class="sensor-card" id="sc-light">
+            <div class="sc-head"><span>☀</span><span data-i18n="sensor_light">Luminosité — BH1750</span></div>
+            <div class="sc-val" id="sv-light">-- lux</div>
+            <canvas id="mc-light" class="mini-canvas"></canvas>
+            <div class="sc-thresh">
+              <span data-i18n="threshold">Seuil min :</span>
+              <input type="number" id="th-light" value="200" min="0" max="2000" onchange="updateThreshold('light',this.value)" />lux
+            </div>
+          </div>
+          <div class="sensor-card" id="sc-water">
+            <div class="sc-head"><span>🪣</span><span data-i18n="sensor_water">Niveau d'eau</span></div>
+            <div class="sc-val" id="sv-water">-- %</div>
+            <canvas id="mc-water" class="mini-canvas"></canvas>
+            <div class="sc-thresh">
+              <span data-i18n="threshold">Seuil min :</span>
+              <input type="number" id="th-water" value="20" min="0" max="100" onchange="updateThreshold('water',this.value)" />%
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ACTUATORS -->
+      <div class="page hidden" id="page-actuators">
+        <div class="page-hdr"><h2 data-i18n="nav_actuators">Actionneurs</h2></div>
+        <div class="act-cards">
+          <div class="act-card" id="card-pump">
+            <div class="ac-ico">💧</div>
+            <div class="ac-name" data-i18n="pump">Pompe d'irrigation</div>
+            <div class="ac-model">Relais 5V</div>
+            <div class="ac-state" id="state-pump">ÉTEINT</div>
+            <label class="tgl big"><input type="checkbox" id="act2-pump" onchange="toggleActuator('pump',this)"/><span class="tgl-sl"></span></label>
+            <div class="ac-log" id="log-pump">Jamais activé</div>
+          </div>
+          <div class="act-card" id="card-fan">
+            <div class="ac-ico">🌀</div>
+            <div class="ac-name" data-i18n="fan">Ventilateur</div>
+            <div class="ac-model">Moteur 12V</div>
+            <div class="ac-state" id="state-fan">ÉTEINT</div>
+            <label class="tgl big"><input type="checkbox" id="act2-fan" onchange="toggleActuator('fan',this)"/><span class="tgl-sl"></span></label>
+            <div class="ac-log" id="log-fan">Jamais activé</div>
+          </div>
+          <div class="act-card" id="card-light">
+            <div class="ac-ico">💡</div>
+            <div class="ac-name" data-i18n="lighting">Éclairage</div>
+            <div class="ac-model">LED 220V</div>
+            <div class="ac-state" id="state-light">ÉTEINT</div>
+            <label class="tgl big"><input type="checkbox" id="act2-light" onchange="toggleActuator('light',this)"/><span class="tgl-sl"></span></label>
+            <div class="ac-log" id="log-light">Jamais activé</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- HISTORY -->
+      <div class="page hidden" id="page-history">
+        <div class="page-hdr">
+          <h2 data-i18n="nav_history">Historique</h2>
+          <button class="btn-export" onclick="exportCSV()">⬇ Exporter CSV</button>
+        </div>
+        <div class="hist-filters">
+          <select id="hist-filter" onchange="renderHistory()">
+            <option value="all">Tout</option>
+            <option value="sensor">Capteurs</option>
+            <option value="actuator">Actionneurs</option>
+            <option value="alert">Alertes</option>
+          </select>
+        </div>
+        <div class="hist-table-wrap">
+          <table class="hist-table">
+            <thead><tr>
+              <th data-i18n="col_time">Heure</th>
+              <th data-i18n="col_type">Type</th>
+              <th data-i18n="col_desc">Description</th>
+              <th data-i18n="col_value">Valeur</th>
+            </tr></thead>
+            <tbody id="history-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- SETTINGS -->
+      <div class="page hidden" id="page-settings">
+        <div class="page-hdr"><h2 data-i18n="nav_settings">Paramètres</h2></div>
+        <div class="settings-grid">
+          <div class="sett-section">
+            <h3 data-i18n="settings_thresholds">Seuils d'alerte</h3>
+            <div class="srow"><label>Humidité sol min (%)</label><input type="number" id="cfg-humidity" value="30" class="cinput" onchange="updateThreshold('humidity',this.value)"/></div>
+            <div class="srow"><label>Température max (°C)</label><input type="number" id="cfg-temp" value="35" class="cinput" onchange="updateThreshold('temp',this.value)"/></div>
+            <div class="srow"><label>CO₂ max (ppm)</label><input type="number" id="cfg-co2" value="1000" class="cinput" onchange="updateThreshold('co2',this.value)"/></div>
+            <div class="srow"><label>Luminosité min (lux)</label><input type="number" id="cfg-light" value="200" class="cinput" onchange="updateThreshold('light',this.value)"/></div>
+            <div class="srow"><label>Réservoir min (%)</label><input type="number" id="cfg-water" value="20" class="cinput" onchange="updateThreshold('water',this.value)"/></div>
+          </div>
+          <div class="sett-section">
+            <h3 data-i18n="settings_system">Système</h3>
+            <div class="srow"><label>Intervalle mesures (s)</label><input type="number" id="cfg-interval" value="3" min="1" max="60" class="cinput" onchange="setSensorInterval(this.value)"/></div>
+            <div class="srow"><label data-i18n="settings_auto">Automatisation</label>
+              <label class="tgl"><input type="checkbox" id="cfg-auto" checked onchange="setAutoMode(this.checked)"/><span class="tgl-sl"></span></label>
+            </div>
+            <div class="srow"><label data-i18n="settings_lang">Langue</label>
+              <select class="cinput" onchange="setLang(this.value)"><option value="fr">Français</option><option value="en">English</option></select>
+            </div>
+            <div class="srow"><label>Broker MQTT</label><input type="text" class="cinput" value="mqtt://localhost:1883"/></div>
+          </div>
+          <div class="sett-section">
+            <h3 data-i18n="settings_account">Compte</h3>
+            <div class="srow"><label>Utilisateur</label><span id="cfg-username" class="cstatic">admin</span></div>
+            <div class="srow"><label>Rôle</label><span id="cfg-role" class="cstatic role-badge">ADMIN</span></div>
+            <div class="srow"><label>Protocole</label><span class="cstatic">MQTT + HTTP/REST</span></div>
+            <div class="srow"><label>Microcontrôleur</label><span class="cstatic">ESP32 (Wi-Fi)</span></div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
